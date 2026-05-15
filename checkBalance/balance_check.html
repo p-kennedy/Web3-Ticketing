@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Balance Check — TicketChain</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+<!-- ── Header ─────────────────────────────────────── -->
+<header>
+  <div class="logo-mark">TC</div>
+  <span class="logo-text">TICKETCHAIN</span>
+  <div class="header-sub">
+    <span class="net-dot"></span>SEPOLIA TESTNET<br>
+    <span id="rpcStatus" style="font-size:10px;">connecting…</span>
+  </div>
+</header>
+
+<!-- ── Hero ──────────────────────────────────────── -->
+<div class="hero">
+  <h1>Balance &amp; Ticket Verification</h1>
+  <p>Query wallet balances and ticket ownership on the Sepolia testnet. Three dedicated views for attendees, door staff, and the venue.</p>
+</div>
+
+<!-- ── Role Cards ──────────────────────────────────── -->
+<div class="grid">
+
+  <!-- ① ATTENDEE ──────────────────────────────────── -->
+  <div class="card attendee">
+    <div class="card-header">
+      <div class="role-icon">🎫</div>
+      <div>
+        <div class="role-title">Attendee</div>
+        <div class="role-desc">Enter your own wallet address to confirm your ticket purchase and check your ETH balance.</div>
+      </div>
+    </div>
+
+    <div class="input-group">
+      <label class="input-label" for="attendeeAddr">Your Wallet Address</label>
+      <div class="input-wrap">
+        <input class="addr-input" id="attendeeAddr"
+               type="text" placeholder="0x…"
+               autocomplete="off" spellcheck="false" />
+        <button class="input-clear" onclick="clearInput('attendeeAddr','attendeeResult')" title="Clear">×</button>
+      </div>
+    </div>
+
+    <button class="btn-check" id="attendeeBtn" onclick="checkBalance('attendee')">
+      <span class="btn-label">Confirm My Ticket</span>
+      <div class="btn-spinner"></div>
+    </button>
+
+    <div class="results" id="attendeeResult">
+      <div class="results-header">
+        <span>Result</span>
+        <span class="results-addr" id="attendeeResultAddr"></span>
+      </div>
+      <div class="balance-rows">
+        <div class="bal-row">
+          <span class="bal-label">
+            <span class="bal-label-icon eth-icon">Ξ</span>ETH Balance
+          </span>
+          <span class="bal-value" id="attendeeEth">—<span class="bal-unit">ETH</span></span>
+        </div>
+        <div class="bal-row">
+          <span class="bal-label">
+            <span class="bal-label-icon tok-icon">🎟</span>Ticket Tokens
+          </span>
+          <span class="bal-value" id="attendeeTok">—<span class="bal-unit">TKT</span></span>
+        </div>
+        <div class="bal-row">
+          <span class="bal-label" style="width:100%; display:block;">
+            <span id="attendeeBadge"></span>
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ② DOORMAN ───────────────────────────────────── -->
+  <div class="card doorman">
+    <div class="card-header">
+      <div class="role-icon">🚪</div>
+      <div>
+        <div class="role-title">Doorman</div>
+        <div class="role-desc">Enter any wallet address presented at entry to verify the holder has a valid ticket token.</div>
+      </div>
+    </div>
+
+    <div class="input-group">
+      <label class="input-label" for="doormanAddr">Attendee Wallet Address</label>
+      <div class="input-wrap">
+        <input class="addr-input" id="doormanAddr"
+               type="text" placeholder="0x…"
+               autocomplete="off" spellcheck="false" />
+        <button class="input-clear" onclick="clearInput('doormanAddr','doormanResult')" title="Clear">×</button>
+      </div>
+    </div>
+
+    <button class="btn-check" id="doormanBtn" onclick="checkBalance('doorman')">
+      <span class="btn-label">Verify Ticket Holder</span>
+      <div class="btn-spinner"></div>
+    </button>
+
+    <div class="results" id="doormanResult">
+      <div class="results-header">
+        <span>Result</span>
+        <span class="results-addr" id="doormanResultAddr"></span>
+      </div>
+      <div class="balance-rows">
+        <div class="bal-row">
+          <span class="bal-label">
+            <span class="bal-label-icon eth-icon">Ξ</span>ETH Balance
+          </span>
+          <span class="bal-value" id="doormanEth">—<span class="bal-unit">ETH</span></span>
+        </div>
+        <div class="bal-row">
+          <span class="bal-label">
+            <span class="bal-label-icon tok-icon">🎟</span>Ticket Tokens
+          </span>
+          <span class="bal-value" id="doormanTok">—<span class="bal-unit">TKT</span></span>
+        </div>
+        <div class="bal-row">
+          <span class="bal-label" style="width:100%; display:block;">
+            <span id="doormanBadge"></span>
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ③ VENUE ──────────────────────────────────────── -->
+  <div class="card venue">
+    <div class="card-header">
+      <div class="role-icon">🏟</div>
+      <div>
+        <div class="role-title">Venue</div>
+        <div class="role-desc">Monitor total ticket distribution. The contract address is pre-loaded — check how many tokens remain in the pool.</div>
+      </div>
+    </div>
+
+    <div class="input-group">
+      <label class="input-label" for="venueAddr">Token Contract Address</label>
+      <div class="input-wrap">
+        <!-- Pre-filled with your deployed contract address — update as needed -->
+        <input class="addr-input" id="venueAddr"
+               type="text"
+               value="0x0000000000000000000000000000000000000000"
+               autocomplete="off" spellcheck="false" />
+        <button class="input-clear" onclick="clearInput('venueAddr','venueResult')" title="Clear">×</button>
+      </div>
+    </div>
+
+    <button class="btn-check" id="venueBtn" onclick="checkBalance('venue')">
+      <span class="btn-label">Check Distribution</span>
+      <div class="btn-spinner"></div>
+    </button>
+
+    <div class="results" id="venueResult">
+      <div class="results-header">
+        <span>Contract Balance</span>
+        <span class="results-addr" id="venueResultAddr"></span>
+      </div>
+      <div class="balance-rows">
+        <div class="bal-row">
+          <span class="bal-label">
+            <span class="bal-label-icon eth-icon">Ξ</span>Contract ETH
+          </span>
+          <span class="bal-value" id="venueEth">—<span class="bal-unit">ETH</span></span>
+        </div>
+        <div class="bal-row">
+          <span class="bal-label">
+            <span class="bal-label-icon tok-icon">🎟</span>Remaining Tokens
+          </span>
+          <span class="bal-value" id="venueTok">—<span class="bal-unit">TKT</span></span>
+        </div>
+      </div>
+      <div class="dist-section" id="distSection" style="display:none;">
+        <div class="dist-title">Tokens Distributed</div>
+        <div class="dist-bar-wrap">
+          <div class="dist-bar-fill" id="distBar" style="width:0%"></div>
+        </div>
+        <div class="dist-labels">
+          <span id="distSold">0 sold</span>
+          <span id="distTotal">/ — total</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /grid -->
+
+<p class="footnote">
+  Connected to <a href="https://rpc-sepolia.rockx.com" target="_blank" rel="noopener">rpc-sepolia.rockx.com</a> &nbsp;·&nbsp;
+  Queries are read-only and never submit transactions
+</p>
+
+<!-- ── Error Modal ──────────────────────────────────── -->
+<div class="modal-overlay" id="errorModal" onclick="closeModal(event)">
+  <div class="modal-box">
+    <div class="modal-icon-wrap">⚠</div>
+    <div class="modal-title">Invalid Input</div>
+    <p class="modal-msg" id="modalMsg">Please check the address and try again.</p>
+    <div class="modal-detail" id="modalDetail"></div>
+    <button class="modal-close" onclick="closeModal()">Dismiss</button>
+  </div>
+</div>
+
+<!-- ── JavaScript ──────────────────────────────────── -->
+<script>
+  /* ── Configuration ───────────────────────────────────
+     Update CONTRACT_ADDRESS and TOTAL_SUPPLY to match
+     your deployed ERC-20 ticket contract.
+  ─────────────────────────────────────────────────── */
+  const RPC_URL        = 'https://rpc-sepolia.rockx.com';
+  const CONTRACT_ADDRESS = document.getElementById('venueAddr').value; // kept in sync
+  const TOTAL_SUPPLY   = 1000; // update to your contract's totalSupply
+
+  /* ERC-20 ABI selectors we need (minimal):
+     balanceOf(address)  → 0x70a08231
+     totalSupply()       → 0x18160ddd
+  */
+  const SIG_BALANCE_OF   = '0x70a08231';
+  const SIG_TOTAL_SUPPLY = '0x18160ddd';
+
+  /* ── RPC helper ──────────────────────────────────── */
+  let rpcId = 1;
+  async function rpcCall(method, params) {
+    const resp = await fetch(RPC_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ jsonrpc:'2.0', id: rpcId++, method, params })
+    });
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    const json = await resp.json();
+    if (json.error) throw new Error(json.error.message || 'RPC error');
+    return json.result;
+  }
+
+  /* ── Probe network on load ───────────────────────── */
+  (async () => {
+    try {
+      const chainId = await rpcCall('eth_chainId', []);
+      const id = parseInt(chainId, 16);
+      const el = document.getElementById('rpcStatus');
+      el.textContent = `Chain ID ${id} · Live`;
+      el.style.color = 'var(--accent-a)';
+    } catch (e) {
+      document.getElementById('rpcStatus').textContent = 'RPC unreachable';
+    }
+  })();
+
+  /* ── Address validation ──────────────────────────── */
+  function isValidAddress(addr) {
+    return /^0x[0-9a-fA-F]{40}$/.test(addr.trim());
+  }
+
+  /* ── Pad address for eth_call data ──────────────── */
+  function padAddress(addr) {
+    return '000000000000000000000000' + addr.slice(2).toLowerCase();
+  }
+
+  /* ── Wei → ETH (4 dp) ────────────────────────────── */
+  function weiToEth(hex) {
+    const wei = BigInt(hex);
+    const eth = Number(wei) / 1e18;
+    return eth.toFixed(4);
+  }
+
+  /* ── Hex uint256 → decimal ───────────────────────── */
+  function hexToDecimal(hex) {
+    if (!hex || hex === '0x') return '0';
+    return BigInt(hex).toString(10);
+  }
+
+  /* ── Fetch ETH balance ───────────────────────────── */
+  async function getEthBalance(address) {
+    const hex = await rpcCall('eth_getBalance', [address, 'latest']);
+    return weiToEth(hex);
+  }
+
+  /* ── Fetch ERC-20 balance of an address ─────────── */
+  async function getTokenBalance(address) {
+    const contractAddr = document.getElementById('venueAddr').value.trim();
+    const data = SIG_BALANCE_OF + padAddress(address);
+    const hex = await rpcCall('eth_call', [
+      { to: contractAddr, data }, 'latest'
+    ]);
+    return hexToDecimal(hex);
+  }
+
+  /* ── Fetch ERC-20 totalSupply ────────────────────── */
+  async function getTotalSupply() {
+    const contractAddr = document.getElementById('venueAddr').value.trim();
+    const hex = await rpcCall('eth_call', [
+      { to: contractAddr, data: SIG_TOTAL_SUPPLY }, 'latest'
+    ]);
+    return hexToDecimal(hex);
+  }
+
+  /* ── Ticket badge HTML ───────────────────────────── */
+  function ticketBadge(tokBalance) {
+    const n = Number(tokBalance);
+    if (n > 0) {
+      return `<span class="ticket-badge has-ticket">
+                <span class="badge-dot"></span>TICKET VALID — ${n} token${n>1?'s':''}
+              </span>`;
+    }
+    return `<span class="ticket-badge no-ticket">
+              <span class="badge-dot"></span>NO TICKET FOUND
+            </span>`;
+  }
+
+  /* ── Loading state helpers ───────────────────────── */
+  function setLoading(role, on) {
+    const btn = document.getElementById(role + 'Btn');
+    btn.disabled = on;
+    btn.classList.toggle('loading', on);
+  }
+
+  /* ── Show / hide results panel ───────────────────── */
+  function showResult(role) {
+    document.getElementById(role + 'Result').classList.add('visible');
+  }
+  function hideResult(role) {
+    document.getElementById(role + 'Result').classList.remove('visible');
+  }
+
+  /* ── Truncate address ────────────────────────────── */
+  function truncate(addr) {
+    return addr.slice(0,6) + '…' + addr.slice(-4);
+  }
+
+  /* ── Main check dispatcher ───────────────────────── */
+  async function checkBalance(role) {
+    const inputId = role + 'Addr';
+    const address = document.getElementById(inputId).value.trim();
+
+    hideResult(role);
+
+    if (!isValidAddress(address)) {
+      showModal(
+        'The address you entered is not a valid Ethereum address.',
+        `"${address || '(empty)'}"\nMust be a 40-hex-character address starting with 0x.`
+      );
+      return;
+    }
+
+    setLoading(role, true);
+
+    try {
+      const [ethBal, tokBal] = await Promise.all([
+        getEthBalance(address),
+        getTokenBalance(address)
+      ]);
+
+      if (role === 'attendee') {
+        document.getElementById('attendeeResultAddr').textContent = truncate(address);
+        document.getElementById('attendeeEth').innerHTML = `${ethBal}<span class="bal-unit">ETH</span>`;
+        document.getElementById('attendeeTok').innerHTML = `${tokBal}<span class="bal-unit">TKT</span>`;
+        document.getElementById('attendeeBadge').innerHTML = ticketBadge(tokBal);
+      }
+
+      if (role === 'doorman') {
+        document.getElementById('doormanResultAddr').textContent = truncate(address);
+        document.getElementById('doormanEth').innerHTML = `${ethBal}<span class="bal-unit">ETH</span>`;
+        document.getElementById('doormanTok').innerHTML = `${tokBal}<span class="bal-unit">TKT</span>`;
+        document.getElementById('doormanBadge').innerHTML = ticketBadge(tokBal);
+      }
+
+      if (role === 'venue') {
+        // For venue: show the contract's own token balance + try totalSupply
+        document.getElementById('venueResultAddr').textContent = truncate(address);
+        document.getElementById('venueEth').innerHTML = `${ethBal}<span class="bal-unit">ETH</span>`;
+        document.getElementById('venueTok').innerHTML = `${tokBal}<span class="bal-unit">TKT</span>`;
+
+        // Distribution bar
+        try {
+          const supply = await getTotalSupply();
+          const total  = Number(supply);
+          const remain = Number(tokBal);
+          const sold   = Math.max(0, total - remain);
+          const pct    = total > 0 ? Math.round((sold / total) * 100) : 0;
+
+          document.getElementById('distSection').style.display = 'block';
+          document.getElementById('distBar').style.width = pct + '%';
+          document.getElementById('distSold').textContent = `${sold.toLocaleString()} sold (${pct}%)`;
+          document.getElementById('distTotal').textContent = `/ ${total.toLocaleString()} total`;
+        } catch (_) {
+          // totalSupply call failed — hide distribution section silently
+          document.getElementById('distSection').style.display = 'none';
+        }
+      }
+
+      showResult(role);
+
+    } catch (err) {
+      showModal(
+        'Could not retrieve balance data from the network.',
+        err.message
+      );
+    } finally {
+      setLoading(role, false);
+    }
+  }
+
+  /* ── Clear input + result ────────────────────────── */
+  function clearInput(inputId, resultId) {
+    document.getElementById(inputId).value = '';
+    document.getElementById(resultId).classList.remove('visible');
+  }
+
+  /* ── Modal ───────────────────────────────────────── */
+  function showModal(msg, detail) {
+    document.getElementById('modalMsg').textContent    = msg;
+    document.getElementById('modalDetail').textContent = detail;
+    document.getElementById('errorModal').classList.add('open');
+  }
+
+  function closeModal(evt) {
+    // Allow close via overlay click (not on modal-box itself)
+    if (evt && evt.target !== document.getElementById('errorModal')) return;
+    document.getElementById('errorModal').classList.remove('open');
+  }
+
+  // Also close on Escape key
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') document.getElementById('errorModal').classList.remove('open');
+  });
+
+  /* ── Allow Enter key to trigger checks ──────────── */
+  ['attendeeAddr','doormanAddr'].forEach(id => {
+    document.getElementById(id).addEventListener('keydown', e => {
+      if (e.key === 'Enter') {
+        const role = id.replace('Addr','');
+        checkBalance(role);
+      }
+    });
+  });
+  document.getElementById('venueAddr').addEventListener('keydown', e => {
+    if (e.key === 'Enter') checkBalance('venue');
+  });
+</script>
+
+</body>
+</html>

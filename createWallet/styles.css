@@ -1,0 +1,365 @@
+@import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;600&display=swap');
+
+:root {
+  --bg:         #0a0c0f;
+  --surface:    #111318;
+  --surface2:   #191c23;
+  --border:     rgba(255,255,255,0.08);
+  --border-hi:  rgba(255,255,255,0.16);
+  --text:       #e8eaf0;
+  --muted:      #666e82;
+  --accent:     #4a7eff;
+  --accent-dim: #2155cd;
+  --accent-lo:  rgba(74,126,255,0.12);
+  --success:    #00c27a;
+  --success-lo: rgba(0,194,122,0.10);
+  --danger:     #ff4f6b;
+  --danger-lo:  rgba(255,79,107,0.10);
+  --font-mono:  'Space Mono', monospace;
+  --font-body:  'DM Sans', sans-serif;
+  --radius:     10px;
+  --radius-sm:  6px;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: 14px;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 52px 20px 100px;
+}
+
+/* All content in a centred column */
+.page-wrap {
+  width: 100%;
+  max-width: 620px;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+}
+
+/* ── Header ── */
+.page-header {
+  margin-bottom: 40px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid var(--border);
+}
+.eyebrow {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 10px;
+}
+.page-header h1 {
+  font-family: var(--font-mono);
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: -0.02em;
+  margin-bottom: 8px;
+}
+.page-header h1 em {
+  font-style: normal;
+  color: var(--accent);
+}
+.page-header p {
+  font-size: 13px;
+  color: var(--muted);
+  line-height: 1.65;
+}
+
+/* ── Panels ── */
+.panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 28px 32px;
+  margin-bottom: 16px;
+  position: relative;
+  overflow: hidden;
+}
+.panel::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  background: var(--accent);
+  border-radius: var(--radius) var(--radius) 0 0;
+}
+.panel-title {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 22px;
+}
+
+/* ── Form ── */
+.field { margin-bottom: 18px; }
+.field:last-of-type { margin-bottom: 0; }
+.field label {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 7px;
+}
+.input-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+.field input[type="password"],
+.field input[type="text"] {
+  width: 100%;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  padding: 11px 14px;
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+  caret-color: var(--accent);
+}
+.field input:focus {
+  border-color: var(--accent-dim);
+  box-shadow: 0 0 0 3px var(--accent-lo);
+}
+.field input.error {
+  border-color: var(--danger);
+  box-shadow: 0 0 0 3px var(--danger-lo);
+}
+
+/* Password strength bar */
+.strength-track {
+  height: 2px;
+  background: var(--border);
+  border-radius: 2px;
+  margin-top: 7px;
+  overflow: hidden;
+}
+.strength-fill {
+  height: 100%;
+  width: 0%;
+  transition: width 0.3s ease, background-color 0.3s ease;
+}
+.strength-label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--muted);
+  margin-top: 5px;
+  letter-spacing: 0.06em;
+  min-height: 14px;
+  transition: color 0.3s;
+}
+
+/* Confirm password hint */
+.match-hint {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  margin-top: 5px;
+  min-height: 14px;
+  letter-spacing: 0.06em;
+}
+
+/* ── Error banner ── */
+#errorBanner {
+  display: none;
+  background: var(--danger-lo);
+  border: 1px solid rgba(255,79,107,0.35);
+  border-radius: var(--radius-sm);
+  padding: 11px 16px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--danger);
+  margin-bottom: 16px;
+  letter-spacing: 0.04em;
+  line-height: 1.5;
+}
+
+/* ── Generate button ── */
+.btn-generate {
+  width: 100%;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-sm);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 14px 28px;
+  cursor: pointer;
+  margin-top: 22px;
+  transition: opacity 0.15s, transform 0.1s;
+  position: relative;
+  overflow: hidden;
+}
+.btn-generate:hover:not(:disabled) { opacity: 0.88; }
+.btn-generate:active:not(:disabled) { transform: scale(0.99); }
+.btn-generate:disabled { opacity: 0.35; cursor: not-allowed; }
+
+/* ── Result panel (hidden until keypair generated) ── */
+#resultPanel {
+  display: none;
+  animation: fadeUp 0.35s ease both;
+}
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Key / address display rows */
+.key-row { margin-bottom: 18px; }
+.key-row:last-of-type { margin-bottom: 0; }
+.key-label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 7px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.copy-btn {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--muted);
+  padding: 3px 10px;
+  cursor: pointer;
+  transition: border-color 0.12s, color 0.12s;
+}
+.copy-btn:hover { border-color: var(--accent); color: var(--accent); }
+.copy-btn.copied { color: var(--accent); border-color: var(--accent-dim); }
+
+.key-value {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--text);
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 12px 14px;
+  word-break: break-all;
+  line-height: 1.65;
+}
+.key-value.masked { color: var(--muted); letter-spacing: 0.08em; }
+
+.reveal-btn {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  background: none;
+  border: none;
+  color: var(--muted);
+  cursor: pointer;
+  text-decoration: underline;
+  margin-top: 6px;
+  display: inline-block;
+  padding: 0;
+  transition: color 0.12s;
+}
+.reveal-btn:hover { color: var(--accent); }
+
+/* Warning box for private key */
+.warning-box {
+  background: var(--danger-lo);
+  border: 1px solid rgba(255,79,107,0.25);
+  border-radius: var(--radius-sm);
+  padding: 10px 14px;
+  margin-top: 10px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--danger);
+  line-height: 1.6;
+  letter-spacing: 0.02em;
+}
+
+/* ── Download button ── */
+.btn-download {
+  width: 100%;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-sm);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 14px 28px;
+  cursor: pointer;
+  margin-top: 8px;
+  transition: opacity 0.15s, transform 0.1s;
+}
+.btn-download:hover { opacity: 0.88; }
+.btn-download:active { transform: scale(0.99); }
+
+/* Keystore preview accordion */
+.accordion-toggle {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  background: none;
+  border: none;
+  color: var(--muted);
+  cursor: pointer;
+  padding: 0;
+  margin-top: 14px;
+  display: block;
+  text-decoration: underline;
+  transition: color 0.12s;
+}
+.accordion-toggle:hover { color: var(--accent); }
+
+#keystorePreview {
+  display: none;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 14px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--muted);
+  white-space: pre-wrap;
+  word-break: break-all;
+  margin-top: 10px;
+  max-height: 220px;
+  overflow-y: auto;
+  line-height: 1.6;
+}
+
+/* ── Encryption note ── */
+.scrypt-note {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--muted);
+  border-top: 1px solid var(--border);
+  padding-top: 12px;
+  margin-top: 16px;
+  line-height: 1.7;
+  letter-spacing: 0.02em;
+}
+.scrypt-note span { color: var(--accent); }

@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TicketChain — Sepolia Testnet</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+<header>
+  <div class="logo-mark">TC</div>
+  <span class="logo-text">TICKETCHAIN</span>
+  <div class="header-sub">
+    <span class="net-dot"></span>SEPOLIA TESTNET<br/>
+    ERC-20 Ticket System
+  </div>
+</header>
+
+<!-- Hero -->
+<div class="hero">
+  <div class="hero-eyebrow">Decentralised Event Ticketing</div>
+  <h1>Your tickets,<br/><span>on-chain</span></h1>
+  <p>
+    A Web3 ticketing system built on the Sepolia testnet.
+    Create a wallet, purchase tickets, verify ownership, or return them — all without a centralised backend.
+  </p>
+  <div class="flow-steps">
+    <div class="flow-step">
+      <span class="flow-step-num">1</span>
+      <span>Create Wallet</span>
+    </div>
+    <span class="flow-arrow">→</span>
+    <div class="flow-step">
+      <span class="flow-step-num">2</span>
+      <span>Buy Ticket</span>
+    </div>
+    <span class="flow-arrow">→</span>
+    <div class="flow-step">
+      <span class="flow-step-num">3</span>
+      <span>Verify / Return</span>
+    </div>
+  </div>
+</div>
+
+<!-- Cards -->
+<div class="section-divider">
+  <span>Pages</span>
+</div>
+
+<div class="cards-grid">
+
+  <!-- Create Wallet -->
+  <a class="page-card" href="createWallet/createWallet.html">
+    <div class="card-top">
+      <div class="card-icon">🔑</div>
+      <span class="card-step">Step 01</span>
+    </div>
+    <div class="card-title">Create Wallet</div>
+    <div class="card-desc">
+      Generate a fresh Ethereum keypair and download an encrypted keystore file.
+      Required before you can buy or return a ticket.
+    </div>
+    <div class="card-footer">
+      <span class="card-launch">Launch</span>
+      <div class="card-arrow">→</div>
+    </div>
+  </a>
+
+  <!-- Buy Ticket -->
+  <a class="page-card" href="buyTicket/buyTicket.html">
+    <div class="card-top">
+      <div class="card-icon">🎫</div>
+      <span class="card-step">Step 02</span>
+    </div>
+    <div class="card-title">Buy Ticket</div>
+    <div class="card-desc">
+      Load your keystore, choose a quantity, and purchase TKT tokens directly
+      from the contract on Sepolia.
+    </div>
+    <div class="card-footer">
+      <span class="card-launch">Launch</span>
+      <div class="card-arrow">→</div>
+    </div>
+  </a>
+
+  <!-- Return Ticket -->
+  <a class="page-card" href="sendToVendor/vendorTransfer.html">
+    <div class="card-top">
+      <div class="card-icon">↩</div>
+      <span class="card-step">Step 03</span>
+    </div>
+    <div class="card-title">Return Ticket</div>
+    <div class="card-desc">
+      Transfer exactly 1 TKT back to the contract address.
+      Both balances are re-queried on-chain after confirmation.
+    </div>
+    <div class="card-footer">
+      <span class="card-launch">Launch</span>
+      <div class="card-arrow">→</div>
+    </div>
+  </a>
+
+  <!-- Balance Check -->
+  <a class="page-card" href="checkBalance/balance_check.html">
+    <div class="card-top">
+      <div class="card-icon">🔍</div>
+      <span class="card-step">Utility</span>
+    </div>
+    <div class="card-title">Balance Check</div>
+    <div class="card-desc">
+      Verify ticket ownership for any wallet. Three views: attendee self-check,
+      doorman verification, and venue-wide distribution stats.
+    </div>
+    <div class="card-footer">
+      <span class="card-launch">Launch</span>
+      <div class="card-arrow">→</div>
+    </div>
+  </a>
+
+</div>
+
+<footer>
+  <span class="footer-note">TicketChain · Sepolia Testnet · Read-only queries never submit transactions</span>
+  <span class="footer-net">
+    <span class="net-dot"></span>
+    Sepolia · Chain ID 11155111
+  </span>
+</footer>
+
+</body>
+</html>
