@@ -1,0 +1,964 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Return Ticket</title>
+  <script src="https://cdn.jsdelivr.net/gh/ethereum/web3.js/dist/web3.min.js"></script>
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+  <style>
+    /*
+     * Design direction: cold architectural minimalism — slate blues, surgical
+     * whitespace, fine hairlines. The inverse of the buy page's amber warmth.
+     * Returning a ticket should feel deliberate and final, not exciting.
+     */
+    @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=DM+Sans:wght@300;400;500&display=swap');
+
+    :root {
+      --bg:          #f4f5f7;
+      --surface:     #ffffff;
+      --surface-2:   #f0f1f4;
+      --border:      #dde0e8;
+      --border-dark: #b0b6c4;
+      --ink:         #1a1d24;
+      --ink-mid:     #5a6072;
+      --ink-dim:     #9399a8;
+      --blue:        #2155cd;
+      --blue-light:  #e8edff;
+      --green:       #0f7b4f;
+      --green-light: #e3f5ed;
+      --red:         #c0392b;
+      --red-light:   #fdecea;
+      --font-mono:   'DM Mono',  monospace;
+      --font-sans:   'DM Sans',  sans-serif;
+      --radius:      2px;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg);
+      color: var(--ink);
+      font-family: var(--font-sans);
+      font-size: 14px;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 48px 20px 100px;
+    }
+
+    /* ── Page header ── */
+    .page-header {
+      width: 100%;
+      max-width: 660px;
+      margin-bottom: 36px;
+    }
+    .eyebrow {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--ink-dim);
+      margin-bottom: 8px;
+    }
+    .page-header h1 {
+      font-family: var(--font-mono);
+      font-size: 20px;
+      font-weight: 500;
+      color: var(--ink);
+      letter-spacing: -0.02em;
+      border-left: 3px solid var(--blue);
+      padding-left: 14px;
+    }
+    .page-header p {
+      font-size: 13px;
+      color: var(--ink-mid);
+      margin-top: 10px;
+      padding-left: 17px;
+      line-height: 1.6;
+    }
+
+    /* ── Cards ── */
+    .card {
+      width: 100%;
+      max-width: 660px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 28px 32px;
+      margin-bottom: 16px;
+    }
+    .card-title {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      font-weight: 500;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--ink-dim);
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .card-title .step-num {
+      background: var(--ink);
+      color: #fff;
+      font-size: 9px;
+      width: 18px;
+      height: 18px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    /* ── Form fields ── */
+    .field { margin-bottom: 16px; }
+    .field:last-child { margin-bottom: 0; }
+    .field label {
+      display: block;
+      font-family: var(--font-mono);
+      font-size: 10px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--ink-mid);
+      margin-bottom: 6px;
+    }
+    .field input[type="password"],
+    .field input[type="file"] {
+      width: 100%;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      color: var(--ink);
+      font-family: var(--font-mono);
+      font-size: 12px;
+      padding: 10px 13px;
+      outline: none;
+      transition: border-color 0.15s, background 0.15s;
+    }
+    .field input:focus {
+      border-color: var(--blue);
+      background: #fff;
+    }
+    .field input[type="file"] { cursor: pointer; }
+    .field input[type="file"]::file-selector-button {
+      background: var(--border);
+      color: var(--ink-mid);
+      border: none;
+      font-family: var(--font-mono);
+      font-size: 10px;
+      padding: 5px 10px;
+      cursor: pointer;
+      margin-right: 10px;
+      border-radius: var(--radius);
+      letter-spacing: 0.06em;
+    }
+
+    /* ── Wallet status ── */
+    #walletStatus {
+      display: none;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      padding: 10px 13px;
+      background: var(--blue-light);
+      border-left: 3px solid var(--blue);
+      border-radius: var(--radius);
+      color: var(--blue);
+      margin-top: 14px;
+      word-break: break-all;
+      line-height: 1.6;
+    }
+
+    /* ── Transfer summary box ── */
+    .transfer-summary {
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px 18px;
+      margin-bottom: 20px;
+    }
+    .transfer-summary .ts-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      padding: 5px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .transfer-summary .ts-row:last-child { border-bottom: none; }
+    .transfer-summary .ts-label { color: var(--ink-dim); }
+    .transfer-summary .ts-value {
+      color: var(--ink);
+      word-break: break-all;
+      text-align: right;
+      max-width: 60%;
+    }
+    .transfer-summary .ts-value.accent { color: var(--blue); font-weight: 500; }
+
+    /* ── Buttons ── */
+    .btn-primary {
+      width: 100%;
+      background: var(--ink);
+      color: #fff;
+      border: none;
+      font-family: var(--font-mono);
+      font-size: 12px;
+      font-weight: 500;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      padding: 13px 28px;
+      cursor: pointer;
+      border-radius: var(--radius);
+      transition: background 0.15s, opacity 0.15s;
+    }
+    .btn-primary:hover:not(:disabled) { background: #2c3147; }
+    .btn-primary:disabled { opacity: 0.35; cursor: not-allowed; }
+
+    .btn-ghost {
+      background: transparent;
+      color: var(--ink-mid);
+      border: 1px solid var(--border);
+      font-family: var(--font-mono);
+      font-size: 11px;
+      padding: 9px 18px;
+      cursor: pointer;
+      border-radius: var(--radius);
+      transition: border-color 0.15s, color 0.15s;
+      letter-spacing: 0.06em;
+    }
+    .btn-ghost:hover { border-color: var(--blue); color: var(--blue); }
+
+    /* ── Balance panel ── */
+    #balancePanel {
+      display: none;
+      width: 100%;
+      max-width: 660px;
+    }
+    .balance-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+    .balance-tile {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 22px 24px;
+      position: relative;
+      overflow: hidden;
+    }
+    .balance-tile::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 3px;
+    }
+    .balance-tile.sender::before  { background: var(--blue); }
+    .balance-tile.contract::before { background: var(--green); }
+    .balance-tile .tile-label {
+      font-family: var(--font-mono);
+      font-size: 9px;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--ink-dim);
+      margin-bottom: 10px;
+    }
+    .balance-tile .tile-value {
+      font-family: var(--font-mono);
+      font-size: 28px;
+      font-weight: 400;
+      line-height: 1;
+      margin-bottom: 4px;
+    }
+    .balance-tile.sender  .tile-value  { color: var(--blue); }
+    .balance-tile.contract .tile-value { color: var(--green); }
+    .balance-tile .tile-unit {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      color: var(--ink-dim);
+      letter-spacing: 0.08em;
+    }
+    .balance-tile .tile-addr {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      color: var(--ink-dim);
+      margin-top: 8px;
+      word-break: break-all;
+      line-height: 1.5;
+    }
+    /* Pulse animation on balance update */
+    @keyframes pulse-bg {
+      0%   { background-color: var(--surface); }
+      30%  { background-color: var(--blue-light); }
+      100% { background-color: var(--surface); }
+    }
+    .balance-tile.sender.updated  { animation: pulse-bg 1.2s ease-out; }
+    @keyframes pulse-bg-green {
+      0%   { background-color: var(--surface); }
+      30%  { background-color: var(--green-light); }
+      100% { background-color: var(--surface); }
+    }
+    .balance-tile.contract.updated { animation: pulse-bg-green 1.2s ease-out; }
+
+    /* ── Receipt summary ── */
+    .receipt-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 22px 26px;
+    }
+    .receipt-card .rc-title {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--green);
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 7px;
+    }
+    .receipt-row {
+      display: flex;
+      gap: 16px;
+      padding: 7px 0;
+      border-bottom: 1px solid var(--border);
+      align-items: flex-start;
+    }
+    .receipt-row:last-child { border-bottom: none; }
+    .receipt-row .rr-key {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      color: var(--ink-dim);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      min-width: 100px;
+      padding-top: 1px;
+    }
+    .receipt-row .rr-val {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--ink);
+      word-break: break-all;
+      line-height: 1.6;
+      flex: 1;
+    }
+    .receipt-row .rr-val a {
+      color: var(--blue);
+      text-decoration: none;
+    }
+    .receipt-row .rr-val a:hover { text-decoration: underline; }
+
+    .raw-toggle {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      color: var(--ink-dim);
+      cursor: pointer;
+      background: none;
+      border: none;
+      padding: 0;
+      margin-top: 14px;
+      display: block;
+      letter-spacing: 0.06em;
+      text-decoration: underline;
+    }
+    #rawReceipt {
+      display: none;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      padding: 14px;
+      font-family: var(--font-mono);
+      font-size: 10px;
+      color: var(--ink-mid);
+      white-space: pre-wrap;
+      word-break: break-all;
+      margin-top: 10px;
+      max-height: 240px;
+      overflow-y: auto;
+      border-radius: var(--radius);
+    }
+
+    /* ── Progress modal ── */
+    #progressModal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(244,245,247,0.82);
+      backdrop-filter: blur(3px);
+      z-index: 200;
+      align-items: center;
+      justify-content: center;
+    }
+    #progressModal.active { display: flex; }
+    .modal-box {
+      background: var(--surface);
+      border: 1px solid var(--border-dark);
+      border-radius: var(--radius);
+      padding: 36px 40px;
+      max-width: 400px;
+      width: 90%;
+      text-align: center;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.08);
+    }
+    .modal-box .m-title {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      font-weight: 500;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--ink);
+      margin-bottom: 8px;
+    }
+    .modal-box .m-body {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--ink-mid);
+      line-height: 1.8;
+      margin-bottom: 24px;
+    }
+    .modal-box .m-hash {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      color: var(--blue);
+      word-break: break-all;
+      background: var(--blue-light);
+      padding: 8px 12px;
+      border-radius: var(--radius);
+      margin-bottom: 20px;
+      display: none;
+    }
+    /* Thin animated progress bar */
+    .progress-bar-track {
+      width: 100%;
+      height: 2px;
+      background: var(--border);
+      border-radius: 1px;
+      overflow: hidden;
+    }
+    .progress-bar-fill {
+      height: 100%;
+      background: var(--blue);
+      width: 0%;
+      animation: indeterminate 1.6s ease-in-out infinite;
+      border-radius: 1px;
+    }
+    @keyframes indeterminate {
+      0%   { width: 0%;   margin-left: 0%; }
+      50%  { width: 60%;  margin-left: 20%; }
+      100% { width: 0%;   margin-left: 100%; }
+    }
+
+    /* ── Error modal ── */
+    #errorModal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(244,245,247,0.82);
+      backdrop-filter: blur(3px);
+      z-index: 200;
+      align-items: center;
+      justify-content: center;
+    }
+    #errorModal.active { display: flex; }
+    .error-box {
+      background: var(--surface);
+      border: 1px solid var(--red);
+      border-radius: var(--radius);
+      padding: 28px 32px;
+      max-width: 440px;
+      width: 90%;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.08);
+    }
+    .error-box .e-title {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--red);
+      margin-bottom: 10px;
+    }
+    .error-box .e-body {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      color: var(--ink);
+      line-height: 1.7;
+      margin-bottom: 18px;
+      word-break: break-word;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Header -->
+  <div class="page-header">
+    <div class="eyebrow">Sepolia Testnet · TicketToken (TKT)</div>
+    <h1>Return Ticket to Vendor</h1>
+    <p>
+      Transfers exactly 1 TKT from your wallet back to the contract address.<br/>
+      Both balances are re-queried on-chain after confirmation.
+    </p>
+  </div>
+
+  <!-- Step 1: Load wallet -->
+  <div class="card">
+    <div class="card-title">
+      <span class="step-num">1</span>
+      Load Wallet
+    </div>
+
+    <div class="field">
+      <label>Keystore File (.json)</label>
+      <input type="file" id="keystoreFile" accept=".json" />
+    </div>
+    <div class="field">
+      <label>Keystore Password</label>
+      <input type="password" id="password" placeholder="Decryption password" autocomplete="off" />
+    </div>
+    <button class="btn-ghost" id="loadWalletBtn" style="margin-top:6px;">
+      Decrypt &amp; Load
+    </button>
+    <div id="walletStatus"></div>
+  </div>
+
+  <!-- Step 2: Confirm and send -->
+  <div class="card">
+    <div class="card-title">
+      <span class="step-num">2</span>
+      Confirm Transfer
+    </div>
+
+    <!-- Static summary — values filled by JS once wallet is loaded -->
+    <div class="transfer-summary">
+      <div class="ts-row">
+        <span class="ts-label">Action</span>
+        <span class="ts-value accent">transfer()</span>
+      </div>
+      <div class="ts-row">
+        <span class="ts-label">Amount</span>
+        <span class="ts-value accent">1 TKT</span>
+      </div>
+      <div class="ts-row">
+        <span class="ts-label">From</span>
+        <span class="ts-value" id="summaryFrom">— load wallet first —</span>
+      </div>
+      <div class="ts-row">
+        <span class="ts-label">To (Contract)</span>
+        <span class="ts-value" id="summaryTo">—</span>
+      </div>
+      <div class="ts-row">
+        <span class="ts-label">Network</span>
+        <span class="ts-value">Sepolia Testnet</span>
+      </div>
+    </div>
+
+    <button class="btn-primary" id="transferBtn" disabled>
+      Sign &amp; Send Transfer
+    </button>
+  </div>
+
+  <!-- Balance panel — revealed after confirmation -->
+  <div id="balancePanel">
+
+    <div class="balance-grid">
+      <div class="balance-tile sender" id="senderTile">
+        <div class="tile-label">Your Balance (After)</div>
+        <div class="tile-value" id="senderBalance">—</div>
+        <div class="tile-unit">TKT</div>
+        <div class="tile-addr" id="senderAddr"></div>
+      </div>
+      <div class="balance-tile contract" id="contractTile">
+        <div class="tile-label">Contract Balance (After)</div>
+        <div class="tile-value" id="contractBalance">—</div>
+        <div class="tile-unit">TKT</div>
+        <div class="tile-addr" id="contractAddrDisplay"></div>
+      </div>
+    </div>
+
+    <div class="receipt-card">
+      <div class="rc-title">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+          <circle cx="7" cy="7" r="6.5" stroke="currentColor"/>
+          <path d="M4 7l2 2 4-4" stroke="currentColor" stroke-width="1.2"
+                stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        Transaction Confirmed
+      </div>
+
+      <div class="receipt-row">
+        <span class="rr-key">Tx Hash</span>
+        <span class="rr-val" id="r-hash"></span>
+      </div>
+      <div class="receipt-row">
+        <span class="rr-key">Block</span>
+        <span class="rr-val" id="r-block"></span>
+      </div>
+      <div class="receipt-row">
+        <span class="rr-key">From</span>
+        <span class="rr-val" id="r-from"></span>
+      </div>
+      <div class="receipt-row">
+        <span class="rr-key">To</span>
+        <span class="rr-val" id="r-to"></span>
+      </div>
+      <div class="receipt-row">
+        <span class="rr-key">Gas Used</span>
+        <span class="rr-val" id="r-gas"></span>
+      </div>
+      <div class="receipt-row">
+        <span class="rr-key">Status</span>
+        <span class="rr-val" id="r-status"></span>
+      </div>
+      <div class="receipt-row">
+        <span class="rr-key">Etherscan</span>
+        <span class="rr-val" id="r-link"></span>
+      </div>
+
+      <button class="raw-toggle" id="rawToggle">Show raw receipt JSON ↓</button>
+      <pre id="rawReceipt"></pre>
+    </div>
+  </div>
+
+  <!-- Progress modal -->
+  <div id="progressModal">
+    <div class="modal-box">
+      <div class="m-title" id="progressTitle">Broadcasting</div>
+      <div class="m-body" id="progressBody">
+        Signing and submitting to Sepolia.<br/>
+        Blocks mine every ~12 seconds.
+      </div>
+      <div class="m-hash" id="progressHash"></div>
+      <div class="progress-bar-track">
+        <div class="progress-bar-fill"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Error modal -->
+  <div id="errorModal">
+    <div class="error-box">
+      <div class="e-title">⚠ Error</div>
+      <div class="e-body" id="errorBody"></div>
+      <button class="btn-ghost" id="errorClose">Dismiss</button>
+    </div>
+  </div>
+
+<script>
+// =============================================================================
+// Configuration
+// =============================================================================
+const RPC_URL          = "https://rpc.sepolia.org";
+const CONTRACT_ADDRESS = "0xYOUR_CONTRACT_ADDRESS_HERE"; // ← replace after deployment
+
+// Minimal ABI — transfer() for sending, balanceOf() for post-tx balance check
+const ABI = [
+  {
+    "inputs": [
+      { "internalType": "address", "name": "recipient", "type": "address" },
+      { "internalType": "uint256", "name": "amount",    "type": "uint256" }
+    ],
+    "name": "transfer",
+    "outputs": [{ "internalType": "bool", "name": "", "type": "bool" }],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [{ "internalType": "address", "name": "account", "type": "address" }],
+    "name": "balanceOf",
+    "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
+    "stateMutability": "view",
+    "type": "function"
+  }
+];
+
+// =============================================================================
+// Module-level state — private key never touches the DOM
+// =============================================================================
+const web3     = new Web3(RPC_URL);
+const contract = new web3.eth.Contract(ABI, CONTRACT_ADDRESS);
+
+let _walletAddress = null;
+let _privateKey    = null;
+
+// =============================================================================
+// UI helpers
+// =============================================================================
+function showProgress(title, body) {
+  $("#progressTitle").text(title);
+  $("#progressBody").html(body);
+  $("#progressHash").hide().text("");
+  $("#progressModal").addClass("active");
+}
+
+function updateProgress(title, body, txHash) {
+  $("#progressTitle").text(title);
+  $("#progressBody").html(body);
+  if (txHash) {
+    $("#progressHash").text(txHash).show();
+  }
+}
+
+function hideProgress() {
+  $("#progressModal").removeClass("active");
+}
+
+function showError(msg) {
+  $("#errorBody").text(msg);
+  $("#errorModal").addClass("active");
+}
+
+/**
+ * Parses a contract revert reason from a Web3 error.
+ * Handles four common error shapes produced by different RPC providers.
+ */
+function parseRevertReason(err) {
+  const msg = err?.data?.message || err?.message || "";
+
+  const match = msg.match(/execution reverted: (.+)/i) ||
+                msg.match(/revert (.+)/i);
+  if (match) return match[1].trim();
+
+  if (err?.receipt?.revertReason) return err.receipt.revertReason;
+
+  const hex = err?.data?.data || err?.data || "";
+  if (typeof hex === "string" && hex.startsWith("0x08c379a0")) {
+    try {
+      const decoded = web3.eth.abi.decodeParameter("string", "0x" + hex.slice(10));
+      if (decoded) return decoded;
+    } catch (_) {}
+  }
+
+  return err?.message || "An unexpected error occurred. Check the browser console.";
+}
+
+// =============================================================================
+// Step 1 — Wallet loading
+// =============================================================================
+$("#loadWalletBtn").on("click", function () {
+  const file     = $("#keystoreFile")[0].files[0];
+  const password = $("#password").val();
+
+  if (!file) {
+    showError("Please select a keystore JSON file.");
+    return;
+  }
+  if (!password) {
+    showError("Please enter the keystore password.");
+    return;
+  }
+
+  const reader = new FileReader();
+  reader.onload = function (e) {
+    try {
+      const keystore = e.target.result;
+      JSON.parse(keystore); // validate JSON before passing to web3
+
+      const wallet = web3.eth.accounts.decrypt(keystore, password);
+
+      _walletAddress = wallet.address;
+      _privateKey    = wallet.privateKey;
+
+      // Update UI
+      $("#walletStatus")
+        .text("Loaded: " + _walletAddress)
+        .show();
+
+      // Fill the transfer summary
+      $("#summaryFrom").text(_walletAddress);
+      $("#summaryTo").text(CONTRACT_ADDRESS);
+
+      // Enable transfer button
+      $("#transferBtn").prop("disabled", false);
+
+      // Clear password from input immediately
+      $("#password").val("");
+
+    } catch (err) {
+      if (err.message && err.message.toLowerCase().includes("wrong")) {
+        showError("Incorrect password. Please try again.");
+      } else if (err instanceof SyntaxError) {
+        showError("The selected file is not a valid JSON keystore.");
+      } else {
+        showError("Wallet decryption failed: " + err.message);
+      }
+    }
+  };
+  reader.readAsText(file);
+});
+
+// =============================================================================
+// Step 2 — Transfer transaction
+// =============================================================================
+$("#transferBtn").on("click", async function () {
+
+  if (!_walletAddress || !_privateKey) {
+    showError("No wallet loaded. Please complete Step 1 first.");
+    return;
+  }
+
+  // Disable immediately — prevents double-submission during async work
+  $("#transferBtn").prop("disabled", true).text("Processing…");
+
+  showProgress(
+    "Pre-flight Check",
+    "Verifying your token balance before signing…"
+  );
+
+  try {
+    // ── Pre-flight: confirm sender holds at least 1 token ──────────────────
+    // Saves gas on a transaction that would revert on-chain, and gives the
+    // user a clear message instead of a raw revert reason.
+    const senderBalance = parseInt(
+      await contract.methods.balanceOf(_walletAddress).call()
+    );
+
+    if (senderBalance < 1) {
+      hideProgress();
+      showError(
+        "Your wallet holds 0 TKT. There is no ticket to return.\n" +
+        `Address checked: ${_walletAddress}`
+      );
+      $("#transferBtn").prop("disabled", false).text("Sign & Send Transfer");
+      return;
+    }
+
+    // ── Build transaction ──────────────────────────────────────────────────
+    // Amount is exactly 1. decimals = 0, so no conversion needed.
+    // If your contract used decimals = 18 this would need to be
+    // web3.utils.toWei("1", "ether") — kept explicit here for clarity.
+    const TRANSFER_AMOUNT = 1;
+
+    const encoded     = contract.methods.transfer(CONTRACT_ADDRESS, TRANSFER_AMOUNT).encodeABI();
+    const nonce       = await web3.eth.getTransactionCount(_walletAddress, "pending");
+    const gasEstimate = await web3.eth.estimateGas({
+      from: _walletAddress,
+      to:   CONTRACT_ADDRESS,
+      data: encoded
+    });
+
+    const tx = {
+      from:  _walletAddress,
+      to:    CONTRACT_ADDRESS,
+      gas:   Math.ceil(gasEstimate * 1.2),  // 20% safety buffer
+      nonce: nonce,                          // explicit nonce — no race condition
+      data:  encoded
+      // value intentionally omitted — transfer() is non-payable
+    };
+
+    updateProgress(
+      "Broadcasting Transaction",
+      "Signing and submitting to Sepolia.<br/>Blocks mine every ~12 seconds.<br/>Do not close this page."
+    );
+
+    // ── Sign, then surface the hash before waiting for mining ──────────────
+    const signed = await web3.eth.accounts.signTransaction(tx, _privateKey);
+
+    // Hash is deterministic from signed bytes — show it before the tx mines
+    // so the user can track it manually if they close the page
+    updateProgress(
+      "Waiting for Confirmation",
+      "Transaction submitted. Waiting for a block…",
+      signed.transactionHash
+    );
+
+    const receipt = await web3.eth.sendSignedTransaction(signed.rawTransaction);
+
+    // Clear key from memory after use
+    _privateKey = null;
+
+    hideProgress();
+
+    // ── Re-query both balances immediately after confirmation ──────────────
+    // Both calls go to the same block height the receipt came from,
+    // so we're reading confirmed on-chain state, not a stale cache.
+    await renderPostTransactionState(receipt);
+
+  } catch (err) {
+    hideProgress();
+    _privateKey = null;
+    $("#transferBtn").prop("disabled", false).text("Sign & Send Transfer");
+    const reason = parseRevertReason(err);
+    showError(reason);
+    console.error("transfer() error:", err);
+  }
+});
+
+// =============================================================================
+// Post-transaction: re-query balances and render everything
+// =============================================================================
+async function renderPostTransactionState(receipt) {
+
+  // ── Query both balances in parallel — both read confirmed state ────────
+  // Promise.all fires both eth_call requests simultaneously rather than
+  // sequentially, halving the round-trip time.
+  const [newSenderBalance, newContractBalance] = await Promise.all([
+    contract.methods.balanceOf(_walletAddress).call(),
+    contract.methods.balanceOf(CONTRACT_ADDRESS).call()
+  ]);
+
+  // ── Balance tiles ──────────────────────────────────────────────────────
+  $("#senderBalance").text(newSenderBalance);
+  $("#contractBalance").text(newContractBalance);
+  $("#senderAddr").text(_walletAddress);
+  $("#contractAddrDisplay").text(CONTRACT_ADDRESS);
+
+  // Trigger pulse animation to draw attention to the updated values
+  const $sender   = $("#senderTile");
+  const $contract = $("#contractTile");
+
+  $sender.addClass("updated");
+  $contract.addClass("updated");
+
+  // Remove class after animation completes so it can re-trigger if needed
+  setTimeout(() => {
+    $sender.removeClass("updated");
+    $contract.removeClass("updated");
+  }, 1300);
+
+  // ── Receipt ────────────────────────────────────────────────────────────
+  const txHash      = receipt.transactionHash;
+  const etherscanUrl = `https://sepolia.etherscan.io/tx/${txHash}`;
+
+  $("#r-hash").text(txHash);
+  $("#r-block").text(receipt.blockNumber);
+  $("#r-from").text(receipt.from);
+  $("#r-to").text(receipt.to);
+  $("#r-gas").text(parseInt(receipt.gasUsed).toLocaleString() + " units");
+  $("#r-status").text(receipt.status ? "✓ Success (status: 1)" : "✗ Failed (status: 0)");
+  $("#r-link").html(`<a href="${etherscanUrl}" target="_blank" rel="noopener">${etherscanUrl}</a>`);
+  $("#rawReceipt").text(JSON.stringify(receipt, null, 2));
+
+  // ── Reveal panel and scroll into view ─────────────────────────────────
+  $("#balancePanel").show();
+  $("#balancePanel")[0].scrollIntoView({ behavior: "smooth", block: "start" });
+
+  // Lock the transfer button — one transfer per session
+  // User must reload the page to perform another transfer
+  $("#transferBtn").text("Transfer Complete").prop("disabled", true);
+}
+ 
+// =============================================================================
+// Raw receipt toggle
+// =============================================================================
+$("#rawToggle").on("click", function () {
+  const visible = $("#rawReceipt").is(":visible");
+  $("#rawReceipt").toggle();
+  $(this).text(visible ? "Show raw receipt JSON ↓" : "Hide raw receipt JSON ↑");
+});
+
+// =============================================================================
+// Error modal dismiss
+// =============================================================================
+$("#errorClose").on("click", function () {
+  $("#errorModal").removeClass("active");
+});
+$("#errorModal").on("click", function (e) {
+  if (e.target === this) $(this).removeClass("active");
+});
+</script>
+</body>
+</html>

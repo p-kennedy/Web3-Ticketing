@@ -1,0 +1,789 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Create Wallet · TicketToken</title>
+  <script src="https://cdn.jsdelivr.net/gh/ethereum/web3.js/dist/web3.min.js"></script>
+  <style>
+    /*
+     * Design direction: deep-space noir — near-black background, electric teal
+     * accents, geometric grid overlay, condensed display type. Feels like
+     * generating a key should feel: weighty, precise, slightly ceremonial.
+     */
+    @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Syne+Mono&display=swap');
+
+    :root {
+      --bg:          #090b10;
+      --surface:     #0f1219;
+      --surface-2:   #151b27;
+      --border:      #1e2535;
+      --teal:        #00e5c0;
+      --teal-dim:    #00876e;
+      --teal-glow:   rgba(0, 229, 192, 0.08);
+      --teal-glow-2: rgba(0, 229, 192, 0.04);
+      --red:         #ff4560;
+      --red-dim:     rgba(255, 69, 96, 0.12);
+      --text:        #c8d0e0;
+      --text-mid:    #68748a;
+      --text-dim:    #3a4258;
+      --font-display:'Syne', sans-serif;
+      --font-mono:   'Syne Mono', monospace;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font-display);
+      font-size: 14px;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 52px 20px 100px;
+      /* Subtle grid texture */
+      background-image:
+        linear-gradient(var(--border) 1px, transparent 1px),
+        linear-gradient(90deg, var(--border) 1px, transparent 1px);
+      background-size: 48px 48px;
+      background-position: center center;
+    }
+
+    /* Radial spotlight centred on content */
+    body::before {
+      content: '';
+      position: fixed;
+      top: -20%;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 800px;
+      height: 800px;
+      background: radial-gradient(ellipse, rgba(0,229,192,0.05) 0%, transparent 70%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* All content above the grid/spotlight */
+    .page-wrap {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      max-width: 620px;
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+    }
+
+    /* ── Header ── */
+    .page-header {
+      margin-bottom: 44px;
+      text-align: center;
+    }
+    .eyebrow {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--teal-dim);
+      margin-bottom: 12px;
+    }
+    .page-header h1 {
+      font-size: 36px;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      color: #fff;
+      line-height: 1;
+      margin-bottom: 10px;
+    }
+    .page-header h1 em {
+      font-style: normal;
+      color: var(--teal);
+    }
+    .page-header p {
+      font-size: 13px;
+      color: var(--text-mid);
+      line-height: 1.65;
+      max-width: 400px;
+      margin: 0 auto;
+    }
+
+    /* ── Panel ── */
+    .panel {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      padding: 32px 36px;
+      margin-bottom: 16px;
+      position: relative;
+      /* Teal top rule accent */
+    }
+    .panel::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--teal-dim), transparent);
+    }
+    .panel-title {
+      font-family: var(--font-mono);
+      font-size: 9px;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--teal);
+      margin-bottom: 22px;
+    }
+
+    /* ── Form ── */
+    .field { margin-bottom: 18px; }
+    .field:last-of-type { margin-bottom: 0; }
+    .field label {
+      display: block;
+      font-family: var(--font-mono);
+      font-size: 9px;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: var(--text-mid);
+      margin-bottom: 7px;
+    }
+    .input-wrap {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+    .field input[type="password"],
+    .field input[type="text"] {
+      width: 100%;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      color: var(--text);
+      font-family: var(--font-mono);
+      font-size: 13px;
+      padding: 12px 14px;
+      outline: none;
+      transition: border-color 0.15s, box-shadow 0.15s;
+      caret-color: var(--teal);
+    }
+    .field input:focus {
+      border-color: var(--teal-dim);
+      box-shadow: 0 0 0 3px var(--teal-glow);
+    }
+    .field input.error {
+      border-color: var(--red);
+      box-shadow: 0 0 0 3px var(--red-dim);
+    }
+
+    /* Password strength bar */
+    .strength-track {
+      height: 2px;
+      background: var(--border);
+      margin-top: 6px;
+      overflow: hidden;
+    }
+    .strength-fill {
+      height: 100%;
+      width: 0%;
+      transition: width 0.3s ease, background-color 0.3s ease;
+    }
+    .strength-label {
+      font-family: var(--font-mono);
+      font-size: 9px;
+      color: var(--text-dim);
+      margin-top: 4px;
+      letter-spacing: 0.08em;
+      min-height: 13px;
+      transition: color 0.3s;
+    }
+
+    /* Confirm field */
+    .match-hint {
+      font-family: var(--font-mono);
+      font-size: 9px;
+      margin-top: 4px;
+      min-height: 13px;
+      letter-spacing: 0.08em;
+    }
+
+    /* ── Error banner ── */
+    #errorBanner {
+      display: none;
+      background: var(--red-dim);
+      border: 1px solid var(--red);
+      padding: 11px 16px;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--red);
+      margin-bottom: 14px;
+      letter-spacing: 0.04em;
+      line-height: 1.5;
+    }
+
+    /* ── Generate button ── */
+    .btn-generate {
+      width: 100%;
+      background: transparent;
+      border: 1px solid var(--teal-dim);
+      color: var(--teal);
+      font-family: var(--font-display);
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      padding: 15px 28px;
+      cursor: pointer;
+      margin-top: 22px;
+      transition: background 0.15s, border-color 0.15s, box-shadow 0.15s;
+      position: relative;
+      overflow: hidden;
+    }
+    .btn-generate:hover {
+      background: var(--teal-glow);
+      border-color: var(--teal);
+      box-shadow: 0 0 24px var(--teal-glow);
+    }
+    .btn-generate:disabled {
+      opacity: 0.3;
+      cursor: not-allowed;
+    }
+    /* Shimmer sweep on hover */
+    .btn-generate::after {
+      content: '';
+      position: absolute;
+      top: 0; left: -100%;
+      width: 60%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(0,229,192,0.1), transparent);
+      transition: left 0.4s ease;
+    }
+    .btn-generate:hover::after { left: 150%; }
+
+    /* ── Wallet result panel (hidden until generated) ── */
+    #resultPanel {
+      display: none;
+      animation: fadeUp 0.4s ease both;
+    }
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(12px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Key/address display rows */
+    .key-row {
+      margin-bottom: 18px;
+    }
+    .key-row:last-of-type { margin-bottom: 0; }
+    .key-label {
+      font-family: var(--font-mono);
+      font-size: 9px;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--text-mid);
+      margin-bottom: 6px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .copy-btn {
+      font-family: var(--font-mono);
+      font-size: 9px;
+      letter-spacing: 0.1em;
+      background: none;
+      border: 1px solid var(--border);
+      color: var(--text-dim);
+      padding: 2px 8px;
+      cursor: pointer;
+      transition: border-color 0.12s, color 0.12s;
+    }
+    .copy-btn:hover { border-color: var(--teal-dim); color: var(--teal); }
+    .copy-btn.copied { color: var(--teal); border-color: var(--teal-dim); }
+
+    .key-value {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      color: var(--text);
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      padding: 12px 14px;
+      word-break: break-all;
+      line-height: 1.65;
+      position: relative;
+    }
+
+    /* Private key — hidden by default, reveal on toggle */
+    .key-value.masked { letter-spacing: 0.1em; color: var(--text-dim); }
+
+    .reveal-btn {
+      font-family: var(--font-mono);
+      font-size: 9px;
+      letter-spacing: 0.12em;
+      background: none;
+      border: none;
+      color: var(--text-dim);
+      cursor: pointer;
+      text-decoration: underline;
+      margin-top: 5px;
+      display: inline-block;
+      padding: 0;
+      transition: color 0.12s;
+    }
+    .reveal-btn:hover { color: var(--teal); }
+
+    /* Warning box for private key */
+    .warning-box {
+      background: rgba(255, 69, 96, 0.06);
+      border: 1px solid rgba(255, 69, 96, 0.25);
+      padding: 10px 14px;
+      margin-top: 10px;
+      font-family: var(--font-mono);
+      font-size: 10px;
+      color: #ff7a8a;
+      line-height: 1.6;
+      letter-spacing: 0.02em;
+    }
+
+    /* ── Download button ── */
+    .btn-download {
+      width: 100%;
+      background: var(--teal);
+      color: var(--bg);
+      border: none;
+      font-family: var(--font-display);
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      padding: 15px 28px;
+      cursor: pointer;
+      margin-top: 8px;
+      transition: opacity 0.15s, box-shadow 0.15s;
+    }
+    .btn-download:hover {
+      opacity: 0.9;
+      box-shadow: 0 4px 24px rgba(0, 229, 192, 0.25);
+    }
+
+    /* Keystore preview accordion */
+    .accordion-toggle {
+      font-family: var(--font-mono);
+      font-size: 9px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      background: none;
+      border: none;
+      color: var(--text-dim);
+      cursor: pointer;
+      padding: 0;
+      margin-top: 14px;
+      display: block;
+      text-decoration: underline;
+      transition: color 0.12s;
+    }
+    .accordion-toggle:hover { color: var(--teal); }
+    #keystorePreview {
+      display: none;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      padding: 14px;
+      font-family: var(--font-mono);
+      font-size: 10px;
+      color: var(--text-dim);
+      white-space: pre-wrap;
+      word-break: break-all;
+      margin-top: 10px;
+      max-height: 220px;
+      overflow-y: auto;
+      line-height: 1.6;
+    }
+
+    /* ── Scrypt note ── */
+    .scrypt-note {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      color: var(--text-dim);
+      border-top: 1px solid var(--border);
+      padding-top: 12px;
+      margin-top: 16px;
+      line-height: 1.7;
+      letter-spacing: 0.02em;
+    }
+    .scrypt-note span { color: var(--teal-dim); }
+  </style>
+</head>
+<body>
+<div class="page-wrap">
+
+  <!-- Header -->
+  <div class="page-header">
+    <div class="eyebrow">TicketToken DApp · Sepolia Testnet</div>
+    <h1>Create a <em>Wallet</em></h1>
+    <p>Generates a fresh Ethereum keypair and encrypts the private key into a
+       portable keystore file using scrypt key derivation.</p>
+  </div>
+
+  <!-- Input panel -->
+  <div class="panel">
+    <div class="panel-title">// Keypair Generation</div>
+
+    <div id="errorBanner"></div>
+
+    <div class="field">
+      <label>Keystore Password</label>
+      <div class="input-wrap">
+        <input type="password" id="password"
+               placeholder="Min. 8 characters"
+               autocomplete="new-password" />
+      </div>
+      <div class="strength-track">
+        <div class="strength-fill" id="strengthFill"></div>
+      </div>
+      <div class="strength-label" id="strengthLabel"></div>
+    </div>
+
+    <div class="field">
+      <label>Confirm Password</label>
+      <div class="input-wrap">
+        <input type="password" id="passwordConfirm"
+               placeholder="Re-enter password"
+               autocomplete="new-password" />
+      </div>
+      <div class="match-hint" id="matchHint"></div>
+    </div>
+
+    <button class="btn-generate" id="generateBtn">
+      Generate Keypair
+    </button>
+  </div>
+
+  <!-- Result panel (hidden until keypair generated) -->
+  <div id="resultPanel">
+
+    <div class="panel">
+      <div class="panel-title">// Wallet Details</div>
+
+      <!-- Public address -->
+      <div class="key-row">
+        <div class="key-label">
+          Public Address
+          <button class="copy-btn" id="copyAddress">Copy</button>
+        </div>
+        <div class="key-value" id="displayAddress"></div>
+      </div>
+
+      <!-- Private key — masked until revealed -->
+      <div class="key-row" style="margin-top: 18px;">
+        <div class="key-label">
+          Private Key
+          <button class="copy-btn" id="copyKey">Copy</button>
+        </div>
+        <div class="key-value masked" id="displayKey">
+          ••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••
+        </div>
+        <button class="reveal-btn" id="revealKeyBtn">Reveal private key</button>
+        <div class="warning-box">
+          ⚠ Never share your private key. Anyone with this string has full
+          control of this wallet. Store it offline only.
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">// Keystore File</div>
+
+      <p style="font-size:12px; color:var(--text-mid); line-height:1.65; margin-bottom:18px;">
+        Your private key is encrypted below using
+        <strong style="color:var(--text);">scrypt</strong> key derivation.
+        Download this file and keep it safe — you will need it together with
+        your password to load this wallet on the Buy Ticket and Return Ticket pages.
+      </p>
+
+      <button class="btn-download" id="downloadBtn">
+        ↓ Download Keystore (.json)
+      </button>
+
+      <button class="accordion-toggle" id="previewToggle">
+        Inspect keystore JSON ↓
+      </button>
+      <pre id="keystorePreview"></pre>
+
+      <div class="scrypt-note">
+        <span>kdf: scrypt</span> &nbsp;·&nbsp;
+        <span>cipher: aes-128-ctr</span> &nbsp;·&nbsp;
+        Encrypted by <span>web3.eth.accounts.encrypt()</span>
+      </div>
+    </div>
+
+  </div><!-- /resultPanel -->
+
+</div><!-- /page-wrap -->
+
+<script>
+// =============================================================================
+// Module-level wallet state
+// Private key stored in a JS variable — never written to any input or DOM text
+// node except via the explicit reveal toggle (which the user controls).
+// =============================================================================
+let _privateKey    = null;   // raw hex private key
+let _walletAddress = null;   // checksummed public address
+let _keystoreJSON  = null;   // serialised encrypted keystore string
+let _keyRevealed   = false;  // tracks whether the reveal toggle is active
+
+const web3 = new Web3();     // no RPC needed — all operations are local crypto
+
+// =============================================================================
+// Password strength scoring
+// Returns 0-4: 0=empty, 1=weak, 2=fair, 3=good, 4=strong
+// =============================================================================
+function scorePassword(pw) {
+  if (!pw) return 0;
+  let score = 0;
+  if (pw.length >= 8)  score++;
+  if (pw.length >= 12) score++;
+  if (/[A-Z]/.test(pw) && /[a-z]/.test(pw)) score++;
+  if (/[0-9]/.test(pw)) score++;
+  if (/[^A-Za-z0-9]/.test(pw)) score++;
+  return Math.min(score, 4);
+}
+
+const STRENGTH_CONFIG = [
+  { label: "",       color: "transparent",  width: "0%" },
+  { label: "Weak",   color: "#ff4560",      width: "25%" },
+  { label: "Fair",   color: "#f5a623",      width: "50%" },
+  { label: "Good",   color: "#00b386",      width: "75%" },
+  { label: "Strong", color: "#00e5c0",      width: "100%" }
+];
+
+function updateStrengthBar() {
+  const pw    = document.getElementById("password").value;
+  const score = scorePassword(pw);
+  const cfg   = STRENGTH_CONFIG[score];
+
+  const fill  = document.getElementById("strengthFill");
+  const label = document.getElementById("strengthLabel");
+
+  fill.style.width           = cfg.width;
+  fill.style.backgroundColor = cfg.color;
+  label.textContent          = pw.length ? cfg.label : "";
+  label.style.color          = cfg.color;
+}
+
+function updateMatchHint() {
+  const pw      = document.getElementById("password").value;
+  const confirm = document.getElementById("passwordConfirm").value;
+  const hint    = document.getElementById("matchHint");
+
+  if (!confirm) {
+    hint.textContent = "";
+    return;
+  }
+  if (pw === confirm) {
+    hint.textContent  = "✓ Passwords match";
+    hint.style.color  = "var(--teal)";
+  } else {
+    hint.textContent  = "✗ Passwords do not match";
+    hint.style.color  = "var(--red)";
+  }
+}
+
+document.getElementById("password").addEventListener("input", () => {
+  updateStrengthBar();
+  updateMatchHint();
+  clearError();
+});
+document.getElementById("passwordConfirm").addEventListener("input", () => {
+  updateMatchHint();
+  clearError();
+});
+
+// =============================================================================
+// Validation
+// =============================================================================
+function showError(msg) {
+  const banner = document.getElementById("errorBanner");
+  banner.textContent = msg;
+  banner.style.display = "block";
+  document.getElementById("password").classList.add("error");
+}
+
+function clearError() {
+  document.getElementById("errorBanner").style.display = "none";
+  document.getElementById("password").classList.remove("error");
+  document.getElementById("passwordConfirm").classList.remove("error");
+}
+
+function validateInputs() {
+  const pw      = document.getElementById("password").value;
+  const confirm = document.getElementById("passwordConfirm").value;
+
+  if (!pw) {
+    showError("A password is required to encrypt the keystore. Please enter one above.");
+    document.getElementById("password").focus();
+    return false;
+  }
+  if (pw.length < 8) {
+    showError("Password must be at least 8 characters. Longer passwords produce stronger keystores.");
+    document.getElementById("password").focus();
+    return false;
+  }
+  if (!confirm) {
+    showError("Please confirm your password in the second field.");
+    document.getElementById("passwordConfirm").focus();
+    return false;
+  }
+  if (pw !== confirm) {
+    showError("Passwords do not match. Please re-enter them.");
+    document.getElementById("passwordConfirm").classList.add("error");
+    document.getElementById("passwordConfirm").focus();
+    return false;
+  }
+  return true;
+}
+
+// =============================================================================
+// Keypair generation
+// =============================================================================
+document.getElementById("generateBtn").addEventListener("click", function () {
+  clearError();
+
+  if (!validateInputs()) return;
+
+  const password = document.getElementById("password").value;
+
+  // Disable button during the scrypt operation — it's CPU-intensive and
+  // blocking the click prevents double-generation while it runs.
+  this.disabled = true;
+  this.textContent = "Encrypting with scrypt…";
+
+  // Defer to next event loop tick so the button state renders before
+  // the synchronous scrypt call blocks the thread.
+  setTimeout(() => {
+    try {
+      // 1. Generate keypair
+      const wallet = web3.eth.accounts.create();
+
+      // 2. Encrypt private key into a V3 keystore using scrypt
+      //    web3.eth.accounts.encrypt() uses scrypt by default (n=8192, r=8, p=1)
+      //    which is the same parameters used by geth and MetaMask export.
+      const keystore = web3.eth.accounts.encrypt(wallet.privateKey, password);
+
+      // 3. Store in module-level variables
+      _privateKey    = wallet.privateKey;
+      _walletAddress = wallet.address;
+      _keystoreJSON  = JSON.stringify(keystore, null, 2);
+
+      // 4. Clear password fields immediately after encrypt — they've done their job
+      document.getElementById("password").value        = "";
+      document.getElementById("passwordConfirm").value = "";
+      updateStrengthBar();
+      updateMatchHint();
+
+      // 5. Populate result panel
+      document.getElementById("displayAddress").textContent = _walletAddress;
+
+      // Private key starts masked — user must actively choose to reveal it
+      _keyRevealed = false;
+      document.getElementById("displayKey").textContent = "•".repeat(64);
+      document.getElementById("displayKey").classList.add("masked");
+      document.getElementById("revealKeyBtn").textContent = "Reveal private key";
+
+      // Keystore preview (collapsed by default)
+      document.getElementById("keystorePreview").textContent = _keystoreJSON;
+
+      // Show result panel
+      document.getElementById("resultPanel").style.display = "block";
+      document.getElementById("resultPanel").scrollIntoView({
+        behavior: "smooth", block: "start"
+      });
+
+      // Re-enable generate button with updated label
+      this.disabled    = false;
+      this.textContent = "Generate New Keypair";
+
+    } catch (err) {
+      showError("Key generation failed: " + err.message);
+      this.disabled    = false;
+      this.textContent = "Generate Keypair";
+      console.error("Wallet generation error:", err);
+    }
+  }, 30);
+});
+
+// =============================================================================
+// Private key reveal toggle
+// The key is never pre-rendered into the DOM — it is written only when the
+// user explicitly clicks Reveal, and masked again on a second click.
+// =============================================================================
+document.getElementById("revealKeyBtn").addEventListener("click", function () {
+  const display = document.getElementById("displayKey");
+
+  if (_keyRevealed) {
+    // Mask again
+    display.textContent = "•".repeat(64);
+    display.classList.add("masked");
+    this.textContent = "Reveal private key";
+    _keyRevealed = false;
+  } else {
+    // Reveal
+    display.textContent = _privateKey;
+    display.classList.remove("masked");
+    this.textContent = "Hide private key";
+    _keyRevealed = true;
+  }
+});
+
+// =============================================================================
+// Copy buttons
+// =============================================================================
+function makeCopyHandler(btnId, getValue) {
+  document.getElementById(btnId).addEventListener("click", function () {
+    const val = getValue();
+    if (!val) return;
+
+    navigator.clipboard.writeText(val).then(() => {
+      const original = this.textContent;
+      this.textContent = "Copied ✓";
+      this.classList.add("copied");
+      setTimeout(() => {
+        this.textContent = original;
+        this.classList.remove("copied");
+      }, 1800);
+    }).catch(() => {
+      // Clipboard API unavailable (non-HTTPS) — silently degrade
+      this.textContent = "Unavailable";
+      setTimeout(() => { this.textContent = "Copy"; }, 1800);
+    });
+  });
+}
+
+makeCopyHandler("copyAddress", () => _walletAddress);
+makeCopyHandler("copyKey",     () => _privateKey);
+
+// =============================================================================
+// Keystore download
+// Filename uses the wallet address so the file is self-identifying.
+// =============================================================================
+document.getElementById("downloadBtn").addEventListener("click", function () {
+  if (!_keystoreJSON || !_walletAddress) return;
+
+  const blob     = new Blob([_keystoreJSON], { type: "application/json" });
+  const url      = URL.createObjectURL(blob);
+  const a        = document.createElement("a");
+  a.href         = url;
+  a.download     = `keystore-${_walletAddress}.json`;
+  a.click();
+
+  // Revoke the object URL shortly after — no need to keep it alive
+  setTimeout(() => URL.revokeObjectURL(url), 5000);
+});
+
+// =============================================================================
+// Keystore preview accordion
+// =============================================================================
+document.getElementById("previewToggle").addEventListener("click", function () {
+  const pre     = document.getElementById("keystorePreview");
+  const visible = pre.style.display === "block";
+  pre.style.display    = visible ? "none" : "block";
+  this.textContent     = visible ? "Inspect keystore JSON ↓" : "Hide keystore JSON ↑";
+});
+</script>
+</body>
+</html>
